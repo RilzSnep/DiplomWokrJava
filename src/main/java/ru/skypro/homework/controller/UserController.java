@@ -1,5 +1,9 @@
 package ru.skypro.homework.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -20,6 +24,9 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Обновление пароля")
+    @ApiResponse(responseCode = "200", description = "Пароль обновлен")
+    @ApiResponse(responseCode = "403", description = "Доступ запрещен")
     @PostMapping("/set_password")
     public ResponseEntity<?> setPassword(@RequestBody NewPassword newPassword) {
         try {
@@ -30,16 +37,24 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Получение информации об авторизованном пользователе")
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = User.class)))
     @GetMapping("/me")
     public ResponseEntity<User> getUser() {
         return ResponseEntity.ok(userService.getCurrentUser());
     }
 
+    @Operation(summary = "Обновление информации об авторизованном пользователе")
+    @ApiResponse(responseCode = "200", description = "OK",
+            content = @Content(schema = @Schema(implementation = UpdateUser.class)))
     @PatchMapping("/me")
     public ResponseEntity<UpdateUser> updateUser(@RequestBody UpdateUser updateUser) {
         return ResponseEntity.ok(userService.updateUser(updateUser));
     }
 
+    @Operation(summary = "Обновление аватара авторизованного пользователя")
+    @ApiResponse(responseCode = "200", description = "OK")
     @PatchMapping(value = "/me/image", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUserImage(@RequestParam("image") MultipartFile image) {
         userService.updateUserImage(image);

@@ -2,6 +2,7 @@ package ru.skypro.homework.dto;
 
 
 import lombok.Data;
+import ru.skypro.homework.entity.Role;
 
 @Data
 public class User {

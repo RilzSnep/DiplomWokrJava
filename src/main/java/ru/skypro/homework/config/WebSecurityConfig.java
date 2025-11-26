@@ -2,6 +2,7 @@ package ru.skypro.homework.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -13,9 +14,9 @@ import ru.skypro.homework.repository.UserRepository;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
+@EnableGlobalMethodSecurity(prePostEnabled = true) // ← ДОБАВИТЬ ЭТУ СТРОКУ
 public class WebSecurityConfig {
 
-    // ТОЛЬКО публичные эндпоинты, не требующие аутентификации
     private static final String[] AUTH_WHITELIST = {
             "/swagger-resources/**",
             "/swagger-ui.html",
@@ -23,8 +24,8 @@ public class WebSecurityConfig {
             "/webjars/**",
             "/login",
             "/register",
-            "/ads",           // GET /ads - просмотр всех объявлений (публичный)
-            "/ads/*/image"    // получение картинок объявлений (публичное)
+            "/ads",
+            "/ads/*/image"
     };
 
     @Bean
@@ -46,9 +47,9 @@ public class WebSecurityConfig {
                         authorization ->
                                 authorization
                                         .mvcMatchers(AUTH_WHITELIST)
-                                        .permitAll()  // эти пути доступны без аутентификации
+                                        .permitAll()
                                         .mvcMatchers("/ads/**", "/users/**")
-                                        .authenticated()) // все остальные пути требуют аутентификации
+                                        .authenticated())
                 .cors()
                 .and()
                 .httpBasic(withDefaults());

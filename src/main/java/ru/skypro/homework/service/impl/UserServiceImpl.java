@@ -14,7 +14,10 @@ import ru.skypro.homework.entity.Role;
 import ru.skypro.homework.entity.UserEntity;
 import ru.skypro.homework.mapper.UserMapper;
 import ru.skypro.homework.repository.UserRepository;
+import ru.skypro.homework.service.ImageService;
 import ru.skypro.homework.service.UserService;
+
+import java.io.IOException;
 
 @Slf4j
 @Service
@@ -24,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final ImageService imageService;
 
     @Override
     public User getCurrentUser() {
@@ -67,8 +71,35 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void updateUserImage(MultipartFile image) {
-        // TODO: реализовать сохранение изображения
-        log.info("Updating user image: {}", image.getOriginalFilename());
+        try {
+            UserEntity userEntity = getCurrentUserEntity();
+
+            // Сохраняем новое изображение
+            String newImageId = imageService.saveImage(image);
+            // Добавляем timestamp для предотвращения кэширования
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String newImagePath = "/images/" + newImageId + "?v=" + timestamp;
+
+            // Удаляем старое изображение, если оно существует
+            String oldImagePath = userEntity.getImage();
+            if (oldImagePath != null && oldImagePath.startsWith("/images/")) {
+                String oldImageId = oldImagePath.substring("/images/".length());
+                // Убираем параметры если есть
+                if (oldImageId.contains("?")) {
+                    oldImageId = oldImageId.substring(0, oldImageId.indexOf("?"));
+                }
+                imageService.deleteImage(oldImageId);
+            }
+
+            // Обновляем путь к изображению у пользователя
+            userEntity.setImage(newImagePath);
+            userRepository.save(userEntity);
+
+            log.info("User image updated: {}", newImagePath);
+        } catch (IOException e) {
+            log.error("Failed to save image", e);
+            throw new RuntimeException("Failed to save image: " + e.getMessage());
+        }
     }
 
     @Override

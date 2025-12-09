@@ -33,6 +33,7 @@ public class UserController {
             userService.updatePassword(newPassword);
             return ResponseEntity.ok().build();
         } catch (RuntimeException e) {
+            log.error("Password update failed", e);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
@@ -42,7 +43,10 @@ public class UserController {
             content = @Content(schema = @Schema(implementation = User.class)))
     @GetMapping("/me")
     public ResponseEntity<User> getUser() {
-        return ResponseEntity.ok(userService.getCurrentUser());
+        log.info("Getting current user info");
+        User user = userService.getCurrentUser();
+        log.info("User image path: {}", user.getImage());
+        return ResponseEntity.ok(user);
     }
 
     @Operation(summary = "Обновление информации об авторизованном пользователе")
@@ -50,14 +54,22 @@ public class UserController {
             content = @Content(schema = @Schema(implementation = UpdateUser.class)))
     @PatchMapping("/me")
     public ResponseEntity<UpdateUser> updateUser(@RequestBody UpdateUser updateUser) {
+        log.info("Updating user info");
         return ResponseEntity.ok(userService.updateUser(updateUser));
     }
 
     @Operation(summary = "Обновление аватара авторизованного пользователя")
     @ApiResponse(responseCode = "200", description = "OK")
+    @ApiResponse(responseCode = "400", description = "Bad Request")
     @PatchMapping(value = "/me/image", consumes = "multipart/form-data")
     public ResponseEntity<?> updateUserImage(@RequestParam("image") MultipartFile image) {
-        userService.updateUserImage(image);
-        return ResponseEntity.ok().build();
+        try {
+            log.info("Updating user image, size: {} bytes", image.getSize());
+            userService.updateUserImage(image);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            log.error("Failed to update user image", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 }

@@ -13,7 +13,9 @@ import ru.skypro.homework.mapper.AdMapper;
 import ru.skypro.homework.repository.AdRepository;
 import ru.skypro.homework.repository.UserRepository;
 import ru.skypro.homework.service.AdService;
+import ru.skypro.homework.service.ImageService;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ public class AdServiceImpl implements AdService {
     private final AdRepository adRepository;
     private final UserRepository userRepository;
     private final AdMapper adMapper;
+    private final ImageService imageService;
 
     @Override
     public Ads getAllAds() {
@@ -41,15 +44,23 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public Ad createAd(CreateOrUpdateAd properties, MultipartFile image, Authentication authentication) {
-        UserEntity author = getUserFromAuthentication(authentication);
+        try {
+            UserEntity author = getUserFromAuthentication(authentication);
 
-        AdEntity adEntity = adMapper.toEntity(properties);
-        adEntity.setAuthor(author);
-        // TODO: сохранить изображение
-        adEntity.setImage("/images/default-ad.jpg");
+            // Сохраняем изображение
+            String imageId = imageService.saveImage(image);
+            String imagePath = "/images/" + imageId;
 
-        AdEntity savedAd = adRepository.save(adEntity);
-        return adMapper.toDto(savedAd);
+            AdEntity adEntity = adMapper.toEntity(properties);
+            adEntity.setAuthor(author);
+            adEntity.setImage(imagePath);
+
+            AdEntity savedAd = adRepository.save(adEntity);
+            log.info("Ad created with id: {}", savedAd.getId());
+            return adMapper.toDto(savedAd);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to save image", e);
+        }
     }
 
     @Override
@@ -82,7 +93,15 @@ public class AdServiceImpl implements AdService {
             throw new RuntimeException("Access denied");
         }
 
+        // Удаляем изображение объявления
+        String imagePath = adEntity.getImage();
+        if (imagePath != null && imagePath.startsWith("/images/")) {
+            String imageId = imagePath.substring("/images/".length());
+            imageService.deleteImage(imageId);
+        }
+
         adRepository.delete(adEntity);
+        log.info("Ad deleted with id: {}", id);
     }
 
     @Override
@@ -102,11 +121,34 @@ public class AdServiceImpl implements AdService {
 
     @Override
     public byte[] updateAdImage(Integer id, MultipartFile image, Authentication authentication) {
-        if (!isAdOwnerOrAdmin(id, authentication)) {
-            throw new RuntimeException("Access denied");
+        try {
+            if (!isAdOwnerOrAdmin(id, authentication)) {
+                throw new RuntimeException("Access denied");
+            }
+
+            AdEntity adEntity = adRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Ad not found"));
+
+            // Удаляем старое изображение
+            String oldImagePath = adEntity.getImage();
+            if (oldImagePath != null && oldImagePath.startsWith("/images/")) {
+                String oldImageId = oldImagePath.substring("/images/".length());
+                imageService.deleteImage(oldImageId);
+            }
+
+            // Сохраняем новое изображение
+            String newImageId = imageService.saveImage(image);
+            String newImagePath = "/images/" + newImageId;
+
+            // Обновляем объявление
+            adEntity.setImage(newImagePath);
+            adRepository.save(adEntity);
+
+            log.info("Ad image updated for ad id: {}", id);
+            return image.getBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to update image", e);
         }
-        // TODO: реализовать сохранение изображения
-        return new byte[0];
     }
 
     @Override

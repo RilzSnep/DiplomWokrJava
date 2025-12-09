@@ -1,6 +1,5 @@
 package ru.skypro.homework.dto;
 
-
 import lombok.Data;
 import ru.skypro.homework.entity.Role;
 
@@ -12,5 +11,5 @@ public class User {
     private String lastName;
     private String phone;
     private Role role;
-    private String image;
+    private String image; // ← ЭТО ПОЛЕ ДОЛЖНО БЫТЬ!
 }

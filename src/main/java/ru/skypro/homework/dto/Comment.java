@@ -8,6 +8,7 @@ public class Comment {
     private String authorImage;
     private String authorFirstName;
     private Long createdAt;
+    private String image;
     private Integer pk;
     private String text;
 }

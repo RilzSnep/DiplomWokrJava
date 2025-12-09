@@ -6,5 +6,6 @@
         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
 
     <include file="db/changelog/001-initial-schema.sql" relativeToChangelogFile="false"/>
+    <include file="db/changelog/002-add-images-table.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

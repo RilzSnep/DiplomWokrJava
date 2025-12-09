@@ -14,7 +14,7 @@ import ru.skypro.homework.repository.UserRepository;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
-@EnableGlobalMethodSecurity(prePostEnabled = true) // ← ДОБАВИТЬ ЭТУ СТРОКУ
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
     private static final String[] AUTH_WHITELIST = {
@@ -24,10 +24,10 @@ public class WebSecurityConfig {
             "/webjars/**",
             "/login",
             "/register",
-            "/ads",
-            "/ads/*/image"
+            "/ads",         
+            "/ads/*/image",
+            "/images/**"
     };
-
     @Bean
     public UserDetailsService userDetailsService(UserRepository userRepository) {
         return username -> userRepository.findByEmail(username)
